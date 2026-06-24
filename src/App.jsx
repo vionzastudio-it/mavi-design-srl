@@ -1,4 +1,4 @@
-import { createElement, useEffect, useMemo, useRef, useState } from 'react'
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowUpRight,
   Bot,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 
 const A = '/mavi-assets'
+const INTRO_VIDEO_SRC = '/mavi-assets/reels/acilis-videosu.mp4'
 const EMAIL_PRIMARY = 'info@mavidesignsrl.it'
 const EMAIL_SECONDARY = 'mavidesignsrlmilano@gmail.com'
 const PHONE_PRIMARY = '+39 392 667 7298'
@@ -35,6 +36,7 @@ const WHATSAPP_URL = 'https://wa.me/393926677298'
 const WHATSAPP_SECONDARY_URL = 'https://wa.me/393883083499'
 const MAPS_URL = 'https://www.google.com/maps/search/Mavi+Design+SRL+Milan+Italy'
 const PROJECT_PREVIEW_COUNT = 10
+const INTRO_BLACK_SCREEN_TIMEOUT = 8000
 const AI_BUTTON_LABEL = 'Mavi AI Destek'
 const AI_PANEL_TITLE = 'Mavi Design Destek Asistanı'
 const AI_PANEL_INTRO = 'Restoran tasarımı, ürünler ve teklif süreci hakkında yardımcı olur.'
@@ -871,8 +873,10 @@ const translations = {
   },
 }
 
-function useReveal() {
+function useReveal(enabled = true) {
   useEffect(() => {
+    if (!enabled) return undefined
+
     const elements = document.querySelectorAll('[data-reveal]')
     const observer = new IntersectionObserver(
       (entries) => {
@@ -884,7 +888,7 @@ function useReveal() {
     )
     elements.forEach((element) => observer.observe(element))
     return () => observer.disconnect()
-  }, [])
+  }, [enabled])
 }
 
 function ParticleField() {
@@ -996,23 +1000,6 @@ function AmbientParticleField() {
   }, [])
 
   return <canvas className="ambient-particles" ref={ref} aria-hidden="true" />
-}
-
-function Intro() {
-  const [hidden, setHidden] = useState(false)
-  useEffect(() => {
-    const timer = setTimeout(() => setHidden(true), 3800)
-    return () => clearTimeout(timer)
-  }, [])
-  return (
-    <div className={`intro ${hidden ? 'intro--hidden' : ''}`} aria-hidden={hidden}>
-      <img src={`${A}/logo/mavi-logo.png`} alt="" />
-      <div className="intro__type">
-        <span className="intro__brand">MAVI DESIGN SRL</span>
-        <strong className="intro__city">İSTANBUL</strong>
-      </div>
-    </div>
-  )
 }
 
 function Nav({ lang, setLang, t }) {
@@ -1235,6 +1222,9 @@ function Lightbox({ items, activeIndex, setActiveIndex, t }) {
 }
 
 function App() {
+  const [showIntro, setShowIntro] = useState(true)
+  const videoRef = useRef(null)
+  const introCompletedRef = useRef(false)
   const [lang, setLang] = useState('en')
   const [lightboxItems, setLightboxItems] = useState([])
   const [activeIndex, setActiveIndex] = useState(null)
@@ -1261,12 +1251,127 @@ function App() {
     [t.catalogLabel],
   )
 
-  useReveal()
+  useReveal(!showIntro)
+
+  const handleIntroDone = useCallback(() => {
+    if (introCompletedRef.current) return
+    introCompletedRef.current = true
+    setShowIntro(false)
+  }, [])
+
+  const playIntroVideo = useCallback(() => {
+    const video = videoRef.current
+    if (!video || introCompletedRef.current) return
+
+    video.muted = true
+    video.defaultMuted = true
+    const playPromise = video.play()
+    if (playPromise?.catch) {
+      playPromise.catch((error) => {
+        console.warn('Mavi Design intro autoplay retry scheduled:', error)
+        window.setTimeout(() => {
+          if (!introCompletedRef.current) {
+            video.play().catch((retryError) => console.warn('Mavi Design intro autoplay retry failed:', retryError))
+          }
+        }, 250)
+      })
+    }
+  }, [])
+
+  const handleVideoReady = useCallback(() => {
+    playIntroVideo()
+  }, [playIntroVideo])
+
+  const handleVideoPlaying = useCallback(() => {
+    const video = videoRef.current
+    if (video) video.dataset.playing = 'true'
+  }, [])
+
+  const handleVideoError = useCallback((event) => {
+    console.error('Mavi Design intro video failed to load or play:', {
+      src: INTRO_VIDEO_SRC,
+      error: event?.currentTarget?.error || event?.target?.error || null,
+    })
+    handleIntroDone()
+  }, [handleIntroDone])
 
   useEffect(() => {
     document.documentElement.lang = lang
     document.documentElement.dir = t.dir
   }, [lang, t.dir])
+
+  useEffect(() => {
+    if (!showIntro || typeof window === 'undefined') return undefined
+
+    const video = videoRef.current
+    let blackScreenTimer
+    let fetchController
+
+    const clearTimers = () => {
+      clearTimeout(blackScreenTimer)
+    }
+
+    const closeIntro = () => {
+      clearTimers()
+      handleIntroDone()
+    }
+
+    const handleFetchError = (error) => {
+      console.error('Mavi Design intro video path check failed:', {
+        src: INTRO_VIDEO_SRC,
+        error,
+      })
+      closeIntro()
+    }
+
+    if (!video) return undefined
+
+    introCompletedRef.current = false
+    blackScreenTimer = setTimeout(() => {
+      const isPlaying = video.dataset.playing === 'true' || (!video.paused && video.currentTime > 0)
+      if (!isPlaying) {
+        console.error('Mavi Design intro video stayed black or did not start within 8 seconds:', {
+          src: INTRO_VIDEO_SRC,
+          readyState: video.readyState,
+          networkState: video.networkState,
+          error: video.error,
+        })
+        closeIntro()
+      }
+    }, INTRO_BLACK_SCREEN_TIMEOUT)
+
+    fetchController = new AbortController()
+    fetch(INTRO_VIDEO_SRC, { cache: 'no-store', signal: fetchController.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} ${response.statusText}`)
+        }
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') handleFetchError(error)
+      })
+
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.preload = 'auto'
+    video.dataset.playing = 'false'
+    video.setAttribute('src', INTRO_VIDEO_SRC)
+
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      handleVideoReady()
+    } else {
+      video.load()
+    }
+
+    return () => {
+      fetchController?.abort()
+      clearTimers()
+      video.pause()
+      video.removeAttribute('src')
+      video.load()
+    }
+  }, [handleIntroDone, handleVideoReady, showIntro])
 
   const openLightbox = (items, index) => {
     setLightboxItems(items)
@@ -1280,10 +1385,29 @@ function App() {
 
   return (
     <div className="app" dir={t.dir}>
-      <AmbientParticleField />
-      <Intro />
-      <Nav lang={lang} setLang={setLang} t={t} />
-      <main>
+      {showIntro && (
+        <div className="video-intro-overlay">
+          <video
+            ref={videoRef}
+            className="video-intro-player"
+            src={INTRO_VIDEO_SRC}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            onLoadedData={handleVideoReady}
+            onCanPlay={handleVideoReady}
+            onPlaying={handleVideoPlaying}
+            onEnded={handleIntroDone}
+            onError={handleVideoError}
+          />
+        </div>
+      )}
+      {!showIntro && (
+        <>
+          <AmbientParticleField />
+          <Nav lang={lang} setLang={setLang} t={t} />
+          <main>
         <section className="hero" id="home">
           <ParticleField />
           <div className="hero__media" aria-hidden="true">
@@ -1520,6 +1644,8 @@ function App() {
       <AiSupportPanel open={supportOpen} onClose={() => setSupportOpen(false)} t={t} />
 
       <Lightbox items={lightboxItems} activeIndex={activeIndex} setActiveIndex={setActiveIndex} t={t} />
+        </>
+      )}
     </div>
   )
 }

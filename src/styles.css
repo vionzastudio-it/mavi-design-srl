@@ -94,190 +94,66 @@ video {
   max-width: 100%;
 }
 
-.intro {
+.video-intro-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(1.1rem, 3vw, 1.8rem);
-  padding: 2rem;
-  background: radial-gradient(circle at center, rgba(26, 39, 68, 0.95) 0%, #0f1728 55%, #09101d 100%);
-  text-align: center;
-  isolation: isolate;
-  transition:
-    opacity 0.9s ease,
-    visibility 0.9s ease;
+  z-index: 999999;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top center, rgba(90, 130, 255, 0.22), transparent 38%),
+    radial-gradient(circle at bottom center, rgba(31, 74, 190, 0.22), transparent 42%),
+    linear-gradient(180deg, #0f1830 0%, #16254a 45%, #0b1430 100%);
 }
 
-.intro::before,
-.intro::after {
+.video-intro-overlay::before {
   position: absolute;
+  inset: 0;
   pointer-events: none;
   content: "";
-}
-
-.intro::before {
-  inset: 0;
-  z-index: -2;
   background:
-    radial-gradient(circle at 50% 42%, rgba(201, 168, 76, 0.16), transparent 22rem),
-    radial-gradient(circle at 34% 32%, rgba(159, 232, 255, 0.09), transparent 18rem),
-    radial-gradient(circle at 68% 62%, rgba(201, 168, 76, 0.08), transparent 20rem);
-  opacity: 0.78;
-  animation: introAmbient 3.8s ease-in-out both;
+    radial-gradient(circle at 50% 42%, rgba(201, 168, 76, 0.11), transparent 32rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  opacity: 0.85;
 }
 
-.intro::after {
-  inset: 14% 12%;
-  z-index: -1;
-  border: 1px solid rgba(201, 168, 76, 0.08);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 28% 34%, rgba(201, 168, 76, 0.22) 0 1px, transparent 2px),
-    radial-gradient(circle at 74% 42%, rgba(248, 246, 241, 0.16) 0 1px, transparent 2px),
-    radial-gradient(circle at 58% 72%, rgba(201, 168, 76, 0.18) 0 1px, transparent 2px);
-  opacity: 0.32;
-  filter: blur(0.2px);
-  animation: introParticlesSettle 3.2s ease both;
+.video-intro-player {
+  position: relative;
+  z-index: 2;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+  background: transparent;
 }
 
-.intro img {
-  width: min(40vw, 210px);
-  flex: 0 0 auto;
-  filter:
-    drop-shadow(0 14px 32px rgba(0, 0, 0, 0.28))
-    drop-shadow(0 0 24px rgba(159, 232, 255, 0.16))
-    drop-shadow(0 0 18px rgba(201, 168, 76, 0.08));
-  animation: introLogoIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.intro__type {
-  display: grid;
-  width: 100%;
-  justify-items: center;
-  gap: clamp(0.1rem, 0.8vw, 0.4rem);
-  color: #f8f6f1;
-  text-align: center;
-}
-
-.intro__brand {
-  --intro-brand-tracking: clamp(0.14em, 0.55vw, 0.22em);
-
-  max-width: 92vw;
-  padding-left: var(--intro-brand-tracking);
-  color: rgba(248, 246, 241, 0.92);
-  font-family: "Manrope", sans-serif;
-  font-size: clamp(1.05rem, 2.3vw, 1.72rem);
-  font-weight: 700;
-  letter-spacing: var(--intro-brand-tracking);
-  line-height: 1.15;
-  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-  text-transform: uppercase;
-  animation: introBrandIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
-}
-
-.intro__city {
-  --intro-city-tracking: 0.1em;
-
-  max-width: 92vw;
-  padding-left: var(--intro-city-tracking);
-  color: #5dafd3;
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(1.08rem, 2.3vw, 1.76rem);
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: var(--intro-city-tracking);
-  line-height: 1.1;
-  text-transform: uppercase;
-  text-shadow:
-    0 2px 16px rgba(0, 0, 0, 0.24),
-    0 0 18px rgba(93, 175, 211, 0.18);
-  animation:
-    introCityWrite 1.55s cubic-bezier(0.42, 0, 0.18, 1) 1.05s both,
-    introCitySettle 1.15s ease 2.45s both;
-  will-change: clip-path, opacity, filter;
-}
-
-.intro--hidden {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
-@keyframes introLogoIn {
-  0% {
-    opacity: 0;
-    transform: translateY(10px) scale(0.94);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
+@media (max-width: 1024px) {
+  .video-intro-player {
+    width: 100vw;
+    height: 100dvh;
+    object-fit: contain;
+    object-position: center center;
+    background: transparent;
   }
 }
 
-@keyframes introBrandIn {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
+@media (max-width: 768px) {
+  .video-intro-overlay {
+    width: 100vw;
+    height: 100dvh;
   }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
-@keyframes introCityWrite {
-  0% {
-    opacity: 0;
-    clip-path: inset(0 100% 0 0);
-    filter: blur(2px);
-  }
-  18% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-    filter: blur(0);
-  }
-}
-
-@keyframes introCitySettle {
-  0% {
-    text-shadow:
-      0 2px 16px rgba(0, 0, 0, 0.24),
-      0 0 24px rgba(93, 175, 211, 0.26);
-  }
-  100% {
-    text-shadow:
-      0 2px 16px rgba(0, 0, 0, 0.24),
-      0 0 14px rgba(93, 175, 211, 0.14);
-  }
-}
-
-@keyframes introAmbient {
-  0% {
-    opacity: 0;
-    transform: scale(1.04);
-  }
-  100% {
-    opacity: 0.78;
-    transform: scale(1);
-  }
-}
-
-@keyframes introParticlesSettle {
-  0% {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  100% {
-    opacity: 0.32;
-    transform: scale(1);
+  .video-intro-player {
+    width: 100vw;
+    height: 100dvh;
+    object-fit: contain;
+    object-position: center center;
+    background: transparent;
   }
 }
 
@@ -1835,30 +1711,6 @@ h3 {
     opacity: 0.12;
   }
 
-  .intro {
-    gap: 1rem;
-    padding: 1.5rem;
-  }
-
-  .intro::after {
-    inset: 18% 8%;
-  }
-
-  .intro img {
-    width: min(48vw, 170px);
-  }
-
-  .intro__brand {
-    font-size: clamp(0.96rem, 3.6vw, 1.18rem);
-    letter-spacing: clamp(0.14em, 0.9vw, 0.2em);
-  }
-
-  .intro__city {
-    max-width: 88vw;
-    font-size: clamp(1.02rem, 3.85vw, 1.24rem);
-    white-space: nowrap;
-  }
-
   .hero::after,
   #products::before,
   #catalog::before,
@@ -2244,6 +2096,7 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 
+  .video-intro-overlay,
   .ambient-particles,
   .particles,
   .app::before,
